@@ -13,6 +13,15 @@ android {
 
     namespace = "io.github.awkwardpeak7.lib.${project.name}"
 
+    sourceSets {
+        named("main") {
+            manifest.srcFile("AndroidManifest.xml")
+            java.setSrcDirs(listOf("src"))
+            res.setSrcDirs(listOf("res"))
+            assets.setSrcDirs(listOf("assets"))
+        }
+    }
+
     buildFeatures {
         androidResources = false
     }
