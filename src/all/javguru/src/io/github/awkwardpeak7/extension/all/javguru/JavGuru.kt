@@ -14,7 +14,6 @@ import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
-import eu.kanade.tachiyomi.network.get
 import eu.kanade.tachiyomi.util.asJsoup
 import eu.kanade.tachiyomi.util.parallelCatchingFlatMapBlocking
 import io.github.awkwardpeak7.extension.all.javguru.extractors.EmTurboExtractor
@@ -25,6 +24,7 @@ import io.github.awkwardpeak7.extractor.streamtape.StreamTapeExtractor
 import io.github.awkwardpeak7.extractor.streamwish.StreamWishExtractor
 import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher
 import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher.fetchHDCovers
+import io.github.awkwardpeak7.network.get
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull

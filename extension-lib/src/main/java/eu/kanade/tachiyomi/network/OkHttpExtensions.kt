@@ -1,11 +1,6 @@
 package eu.kanade.tachiyomi.network
 
 import okhttp3.Call
-import okhttp3.FormBody
-import okhttp3.Headers
-import okhttp3.HttpUrl
-import okhttp3.OkHttpClient
-import okhttp3.RequestBody
 import okhttp3.Response
 
 suspend fun Call.await(): Response = throw Exception("Stub!")
@@ -23,25 +18,3 @@ suspend fun Call.awaitSuccess(): Response = throw Exception("Stub!")
  * @param code [Int] the HTTP status code
  */
 class HttpException(val code: Int) : IllegalStateException("HTTP error $code")
-
-suspend inline fun OkHttpClient.get(
-    url: String,
-    headers: Headers,
-): Response {
-    return newCall(GET(url, headers)).awaitSuccess()
-}
-
-suspend inline fun OkHttpClient.get(
-    url: HttpUrl,
-    headers: Headers,
-): Response {
-    return newCall(GET(url, headers)).awaitSuccess()
-}
-
-suspend inline fun OkHttpClient.post(
-    url: String,
-    headers: Headers,
-    body: RequestBody = FormBody.Builder().build(),
-): Response {
-    return newCall(POST(url, headers, body)).awaitSuccess()
-}
