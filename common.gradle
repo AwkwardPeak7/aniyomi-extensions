@@ -88,6 +88,7 @@ android {
 }
 
 dependencies {
+    compileOnly(project(":extension-lib"))
     implementation(project(":core"))
     compileOnly(libs.bundles.common)
 }

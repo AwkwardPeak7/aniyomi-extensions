@@ -11,7 +11,7 @@ android {
         minSdk = AndroidConfig.minSdk
     }
 
-    namespace = "eu.kanade.tachiyomi.lib.${project.name}"
+    namespace = "io.github.awkwardpeak7.lib.${project.name}"
 
     buildFeatures {
         androidResources = false
@@ -19,5 +19,6 @@ android {
 }
 
 dependencies {
+    compileOnly(project(":extension-lib"))
     compileOnly(versionCatalogs.named("libs").findBundle("common").get())
 }
