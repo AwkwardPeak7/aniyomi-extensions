@@ -99,8 +99,8 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
     }
 
     override suspend fun getAnimeDetails(anime: SAnime): SAnime {
-        return client.get(getAnimeUrl(anime), headers).use {
-            val document = it.asJsoup()
+        return client.get(getAnimeUrl(anime), headers).use { response ->
+            val document = response.asJsoup()
 
             val jpTitle = document.select("div.text-secondary span:contains(title) + span").text()
             val siteCover = document.selectFirst("video.player")?.attr("abs:data-poster")

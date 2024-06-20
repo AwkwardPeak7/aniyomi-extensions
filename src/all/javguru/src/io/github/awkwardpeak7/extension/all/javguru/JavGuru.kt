@@ -186,8 +186,8 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
     override suspend fun getAnimeDetails(anime: SAnime): SAnime {
         val url = getAnimeUrl(anime)
 
-        return client.get(url, headers).use {
-            val document = it.asJsoup()
+        return client.get(url, headers).use { response ->
+            val document = response.asJsoup()
 
             val javId = document.selectFirst(".infoleft li:contains(code)")?.ownText()
             val siteCover = document.select(".large-screenshot img").attr("abs:src")
@@ -231,8 +231,8 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
     override suspend fun getVideoList(episode: SEpisode): List<Video> {
         val url = getEpisodeUrl(episode)
 
-        return client.get(url, headers).use {
-            val document = it.asJsoup()
+        return client.get(url, headers).use { response ->
+            val document = response.asJsoup()
 
             val iframeData = document.selectFirst("script:containsData(iframe_url)")?.html()
                 ?: return emptyList()
