@@ -2,24 +2,28 @@ package io.github.awkwardpeak7.extractor.mixdrop
 
 import eu.kanade.tachiyomi.animesource.model.Track
 import eu.kanade.tachiyomi.animesource.model.Video
-import io.github.awkwardpeak7.lib.unpacker.Unpacker
-import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.util.asJsoup
-import okhttp3.Headers
-import okhttp3.OkHttpClient
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
+import io.github.awkwardpeak7.common.extractor.Extractor
+import io.github.awkwardpeak7.lib.unpacker.Unpacker
+import io.github.awkwardpeak7.network.get
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.net.URLDecoder
 
-class MixDropExtractor(private val client: OkHttpClient) {
-    fun videoFromUrl(
-        url: String,
-        lang: String = "",
-        prefix: String = "",
-        externalSubs: List<Track> = emptyList(),
-        referer: String = DEFAULT_REFERER,
-    ): List<Video> {
-        val headers = Headers.headersOf("Referer", referer)
-        val doc = client.newCall(GET(url, headers)).execute().asJsoup()
-        val unpacked = doc.selectFirst("script:containsData(eval):containsData(MDCore)")
+object MixDropExtractor : Extractor() {
+
+    override fun headersBuilder() = super.headersBuilder()
+        .set("Referer", "https://mixdrop.co/")
+
+    override fun supports(data: ExtractableVideo): Boolean {
+        return data.url.toHttpUrl().host.contains(mixdropHostRegex)
+    }
+
+    private val mixdropHostRegex = Regex("""mixdro+p""")
+
+    override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
+        val document = client.get(data.url, headers).asJsoup()
+        val unpacked = document.selectFirst("script:containsData(eval):containsData(MDCore)")
             ?.data()
             ?.let(Unpacker::unpack)
             ?: return emptyList()
@@ -33,20 +37,18 @@ class MixDropExtractor(private val client: OkHttpClient) {
             ?: emptyList()
 
         val quality = buildString {
-            append("${prefix}MixDrop")
-            if (lang.isNotBlank()) append("($lang)")
+            append("MixDrop")
+            if (!data.quality.isNullOrBlank()) append("(${data.quality})")
         }
 
-        return listOf(Video(videoUrl, quality, videoUrl, headers = headers, subtitleTracks = subs + externalSubs))
+        return listOf(
+            Video(
+                videoUrl,
+                quality,
+                videoUrl,
+                headers,
+                subs,
+            ),
+        )
     }
-
-    fun videosFromUrl(
-        url: String,
-        lang: String = "",
-        prefix: String = "",
-        externalSubs: List<Track> = emptyList(),
-        referer: String = DEFAULT_REFERER,
-    ) = videoFromUrl(url, lang, prefix, externalSubs, referer)
 }
-
-private const val DEFAULT_REFERER = "https://mixdrop.co/"

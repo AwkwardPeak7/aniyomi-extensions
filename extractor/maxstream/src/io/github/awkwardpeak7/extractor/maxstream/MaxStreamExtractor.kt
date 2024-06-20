@@ -2,19 +2,23 @@ package io.github.awkwardpeak7.extractor.maxstream
 
 import dev.datlag.jsunpacker.JsUnpacker
 import eu.kanade.tachiyomi.animesource.model.Video
-import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.util.asJsoup
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
+import io.github.awkwardpeak7.common.extractor.Extractor
 import io.github.awkwardpeak7.lib.playlistutils.PlaylistUtils
-import okhttp3.Headers
+import io.github.awkwardpeak7.network.get
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.OkHttpClient
 
-class MaxStreamExtractor(private val client: OkHttpClient, private val headers: Headers) {
+object MaxStreamExtractor : Extractor() {
 
     private val playListUtils by lazy { PlaylistUtils(client, headers) }
 
-    fun videoFromUrl(url: String): List<Video> {
-        val document = client.newCall(GET(url, headers)).execute().asJsoup()
+    override fun supports(data: ExtractableVideo): Boolean {
+        return data.url.contains("maxstream")
+    }
+
+    override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
+        val document = client.get(data.url, headers).asJsoup()
 
         val script = document.selectFirst("script:containsData(function(p,a,c,k,e,d))")
             ?.data()
@@ -27,6 +31,10 @@ class MaxStreamExtractor(private val client: OkHttpClient, private val headers: 
             return emptyList()
         }
 
-        return playListUtils.extractFromHls(videoUrl, url, videoNameGen = { quality -> "MaxStream: $quality" })
+        return playListUtils.extractFromHls(
+            videoUrl,
+            data.url,
+            videoNameGen = { quality -> "MaxStream: $quality" },
+        )
     }
 }

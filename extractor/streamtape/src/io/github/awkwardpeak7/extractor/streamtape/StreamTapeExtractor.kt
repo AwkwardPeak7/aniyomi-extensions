@@ -1,33 +1,51 @@
 package io.github.awkwardpeak7.extractor.streamtape
 
-import eu.kanade.tachiyomi.animesource.model.Track
 import eu.kanade.tachiyomi.animesource.model.Video
-import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.util.asJsoup
-import okhttp3.OkHttpClient
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
+import io.github.awkwardpeak7.common.extractor.Extractor
+import io.github.awkwardpeak7.network.get
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
-class StreamTapeExtractor(private val client: OkHttpClient) {
-    fun videoFromUrl(url: String, quality: String = "Streamtape", subtitleList: List<Track> = emptyList()): Video? {
+object StreamTapeExtractor : Extractor() {
+
+    override fun supports(data: ExtractableVideo): Boolean {
+        return data.url.toHttpUrl().host.contains("streamtape")
+    }
+
+    override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
         val baseUrl = "https://streamtape.com/e/"
-        val newUrl = if (!url.startsWith(baseUrl)) {
+        val newUrl = if (!data.url.startsWith(baseUrl)) {
             // ["https", "", "<domain>", "<???>", "<id>", ...]
-            val id = url.split("/").getOrNull(4) ?: return null
+            val id = data.url.split("/").getOrNull(4) ?: return emptyList()
             baseUrl + id
-        } else { url }
+        } else { data.url }
 
-        val document = client.newCall(GET(newUrl)).execute().asJsoup()
+        val document = client.get(newUrl, headers).asJsoup()
         val targetLine = "document.getElementById('robotlink')"
         val script = document.selectFirst("script:containsData($targetLine)")
             ?.data()
             ?.substringAfter("$targetLine.innerHTML = '")
-            ?: return null
+            ?: return emptyList()
         val videoUrl = "https:" + script.substringBefore("'") +
             script.substringAfter("+ ('xcd").substringBefore("'")
 
-        return Video(videoUrl, quality, videoUrl, subtitleTracks = subtitleList)
-    }
+        val cookie = client.cookieJar.loadForRequest("https://streamtape.com".toHttpUrl())
+            .firstOrNull { it.name == "cf_clearance" }
 
-    fun videosFromUrl(url: String, quality: String = "Streamtape", subtitleList: List<Track> = emptyList()): List<Video> {
-        return videoFromUrl(url, quality, subtitleList)?.let(::listOf).orEmpty()
+        val videoHeaders = cookie?.let {
+            headersBuilder()
+                .set("Cookie", "${it.name}=${it.value}")
+                .build()
+        } ?: headers
+
+        return listOf(
+            Video(
+                videoUrl,
+                data.quality ?: "Streamtape",
+                videoUrl,
+                videoHeaders,
+            ),
+        )
     }
 }

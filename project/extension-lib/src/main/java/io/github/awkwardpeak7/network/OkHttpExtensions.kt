@@ -2,6 +2,7 @@ package io.github.awkwardpeak7.network
 
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST
+import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
 import okhttp3.FormBody
 import okhttp3.Headers
@@ -15,6 +16,13 @@ suspend inline fun OkHttpClient.get(
     headers: Headers,
 ): Response {
     return newCall(GET(url, headers)).awaitSuccess()
+}
+
+suspend inline fun OkHttpClient.getNotChecking(
+    url: String,
+    headers: Headers,
+): Response {
+    return newCall(GET(url, headers)).await()
 }
 
 suspend inline fun OkHttpClient.get(

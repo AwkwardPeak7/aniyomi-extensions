@@ -1,50 +1,50 @@
 package io.github.awkwardpeak7.extractor.dood
 
-import eu.kanade.tachiyomi.animesource.model.Track
 import eu.kanade.tachiyomi.animesource.model.Video
-import eu.kanade.tachiyomi.network.GET
-import okhttp3.Headers
-import okhttp3.OkHttpClient
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
+import io.github.awkwardpeak7.common.extractor.Extractor
+import io.github.awkwardpeak7.network.get
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
-class DoodExtractor(private val client: OkHttpClient) {
+object DoodExtractor : Extractor() {
 
-    fun videoFromUrl(
-        url: String,
-        quality: String? = null,
-        redirect: Boolean = true,
-        externalSubs: List<Track> = emptyList(),
-    ): Video? {
-        val newQuality = quality ?: ("Doodstream" + if (redirect) " mirror" else "")
+    override fun supports(data: ExtractableVideo): Boolean {
+        val host = data.url.toHttpUrl().host
 
-        return runCatching {
-            val response = client.newCall(GET(url)).execute()
-            val newUrl = if (redirect) response.request.url.toString() else url
-
-            val doodHost = Regex("https://(.*?)/").find(newUrl)!!.groupValues[1]
-            val content = response.body.string()
-            if (!content.contains("'/pass_md5/")) return null
-            val md5 = content.substringAfter("'/pass_md5/").substringBefore("',")
-            val token = md5.substringAfterLast("/")
-            val randomString = getRandomString()
-            val expiry = System.currentTimeMillis()
-            val videoUrlStart = client.newCall(
-                GET(
-                    "https://$doodHost/pass_md5/$md5",
-                    Headers.headersOf("referer", newUrl),
-                ),
-            ).execute().body.string()
-            val videoUrl = "$videoUrlStart$randomString?token=$token&expiry=$expiry"
-            Video(newUrl, newQuality, videoUrl, headers = doodHeaders(doodHost), subtitleTracks = externalSubs)
-        }.getOrNull()
+        return host.contains(doodhostRegex) ||
+            doodhosts.any { host.contains(it) } ||
+            data.extra?.contains("DD") ?: true
     }
 
-    fun videosFromUrl(
-        url: String,
-        quality: String? = null,
-        redirect: Boolean = true,
-    ): List<Video> {
-        val video = videoFromUrl(url, quality, redirect)
-        return video?.let(::listOf) ?: emptyList<Video>()
+    private val doodhostRegex = Regex("do+d")
+    private val doodhosts = listOf(
+        "ds2play",
+    )
+
+    override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
+        val quality = "Doodstream"
+        val response = client.get(data.url, headers)
+        val url = response.request.url
+        val content = response.body.string()
+        if (!content.contains("'/pass_md5/")) return emptyList()
+
+        val md5 = content.substringAfter("'/pass_md5/").substringBefore("',")
+        val token = md5.substringAfterLast("/")
+        val expiry = System.currentTimeMillis()
+        val videoUrlStart = client.get(
+            "https://${url.host}/pass_md5/$md5",
+            headersBuilder().set("referer", url.toString()).build(),
+        ).body.string()
+        val videoUrl = "$videoUrlStart${getRandomString()}?token=$token&expiry=$expiry"
+
+        return listOf(
+            Video(
+                url.toString(),
+                quality,
+                videoUrl,
+                headers = doodHeaders(url.host),
+            ),
+        )
     }
 
     private fun getRandomString(length: Int = 10): String {
@@ -54,8 +54,7 @@ class DoodExtractor(private val client: OkHttpClient) {
             .joinToString("")
     }
 
-    private fun doodHeaders(host: String) = Headers.Builder().apply {
-        add("User-Agent", "Aniyomi")
-        add("Referer", "https://$host/")
-    }.build()
+    private fun doodHeaders(host: String) = headersBuilder()
+        .add("Referer", "https://$host/")
+        .build()
 }

@@ -2,22 +2,26 @@ package io.github.awkwardpeak7.extractor.streamwish
 
 import dev.datlag.jsunpacker.JsUnpacker
 import eu.kanade.tachiyomi.animesource.model.Video
-import io.github.awkwardpeak7.lib.playlistutils.PlaylistUtils
-import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.util.asJsoup
-import okhttp3.Headers
-import okhttp3.OkHttpClient
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
+import io.github.awkwardpeak7.common.extractor.Extractor
+import io.github.awkwardpeak7.lib.playlistutils.PlaylistUtils
+import io.github.awkwardpeak7.network.get
+import okhttp3.HttpUrl.Companion.toHttpUrl
 
-class StreamWishExtractor(private val client: OkHttpClient, private val headers: Headers) {
+object StreamWishExtractor : Extractor() {
+
     private val playlistUtils by lazy { PlaylistUtils(client, headers) }
 
-    fun videosFromUrl(url: String, prefix: String) = videosFromUrl(url) { "$prefix - $it" }
+    override fun supports(data: ExtractableVideo): Boolean {
+        return data.extra?.contains("SB") ?: false ||
+            data.extra?.contains("SW") ?: false ||
+            data.url.toHttpUrl().host.contains("wish")
+    }
 
-    fun videosFromUrl(url: String, videoNameGen: (String) -> String = { quality -> "StreamWish - $quality" }): List<Video> {
-        val doc = client.newCall(GET(url, headers)).execute()
-            .asJsoup()
-        // Sometimes the script body is packed, sometimes it isn't
-        val scriptBody = doc.selectFirst("script:containsData(m3u8)")?.data()
+    override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
+        val document = client.get(data.url, headers).asJsoup()
+        val scriptBody = document.selectFirst("script:containsData(m3u8)")?.data()
             ?.let { script ->
                 if (script.contains("eval(function(p,a,c")) {
                     JsUnpacker.unpackAndCombine(script)
@@ -25,7 +29,6 @@ class StreamWishExtractor(private val client: OkHttpClient, private val headers:
                     script
                 }
             }
-
         val masterUrl = scriptBody
             ?.substringAfter("source", "")
             ?.substringAfter("file:\"", "")
@@ -33,6 +36,6 @@ class StreamWishExtractor(private val client: OkHttpClient, private val headers:
             ?.takeIf(String::isNotBlank)
             ?: return emptyList()
 
-        return playlistUtils.extractFromHls(masterUrl, url, videoNameGen = videoNameGen)
+        return playlistUtils.extractFromHls(masterUrl, data.url, videoNameGen = { quality -> "StreamWish - $quality" })
     }
 }

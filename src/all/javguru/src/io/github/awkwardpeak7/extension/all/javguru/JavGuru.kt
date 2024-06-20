@@ -15,9 +15,9 @@ import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.util.asJsoup
-import eu.kanade.tachiyomi.util.parallelCatchingFlatMapBlocking
+import eu.kanade.tachiyomi.util.parallelCatchingFlatMap
 import io.github.awkwardpeak7.extractor.dood.DoodExtractor
-import io.github.awkwardpeak7.extractor.emturbovid.EmTurboExtractor
+import io.github.awkwardpeak7.extractor.emturbovid.EmTurboVidExtractor
 import io.github.awkwardpeak7.extractor.maxstream.MaxStreamExtractor
 import io.github.awkwardpeak7.extractor.mixdrop.MixDropExtractor
 import io.github.awkwardpeak7.extractor.streamtape.StreamTapeExtractor
@@ -25,6 +25,7 @@ import io.github.awkwardpeak7.extractor.streamwish.StreamWishExtractor
 import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher
 import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher.fetchHDCovers
 import io.github.awkwardpeak7.network.get
+import io.github.awkwardpeak7.network.getNotChecking
 import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -242,84 +243,65 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
                 .map { Base64.decode(it, Base64.DEFAULT).let(::String) }
                 .toList()
 
-            iframeUrls
-                .mapNotNull(::resolveHosterUrl)
-                .parallelCatchingFlatMapBlocking(::getVideos)
+            val iframeHeader = headersBuilder()
+                .set("Referer", url)
+                .build()
+
+            iframeUrls.mapNotNull { iframeUrl ->
+                val iframeDocument = client.getNotChecking(iframeUrl, iframeHeader).asJsoup()
+
+                val script = iframeDocument.selectFirst("script:containsData(start_player)")
+                    ?.html() ?: return@mapNotNull null
+
+                val olid = IFRAME_OLID_REGEX.find(script)?.groupValues?.get(1)?.reversed()
+                    ?: return@mapNotNull null
+
+                val olidUrl = IFRAME_OLID_URL.find(script)?.groupValues?.get(1)
+                    ?.substringBeforeLast("=")?.let { "$it=$olid" }
+                    ?: return@mapNotNull null
+
+                val olidHeaders = headersBuilder()
+                    .set("Referer", iframeUrl)
+                    .build()
+
+                val redirectUrl = noRedirectClient.getNotChecking(olidUrl, olidHeaders)
+                    .use { it.header("location") }
+                    ?: return@mapNotNull null
+
+                if (redirectUrl.toHttpUrlOrNull() == null) {
+                    return@mapNotNull null
+                }
+
+                redirectUrl
+            }.parallelCatchingFlatMap(::getVideos)
         }
     }
 
-    private fun resolveHosterUrl(iframeUrl: String): String? {
-        val iframeResponse = client.newCall(GET(iframeUrl, headers)).execute()
-
-        if (iframeResponse.isSuccessful.not()) {
-            iframeResponse.close()
-            return null
-        }
-
-        val iframeDocument = iframeResponse.asJsoup()
-
-        val script = iframeDocument.selectFirst("script:containsData(start_player)")
-            ?.html() ?: return null
-
-        val olid = IFRAME_OLID_REGEX.find(script)?.groupValues?.get(1)?.reversed()
-            ?: return null
-
-        val olidUrl = IFRAME_OLID_URL.find(script)?.groupValues?.get(1)
-            ?.substringBeforeLast("=")?.let { "$it=$olid" }
-            ?: return null
-
-        val newHeaders = headersBuilder()
-            .set("Referer", iframeUrl)
-            .build()
-
-        val redirectUrl = noRedirectClient.newCall(GET(olidUrl, newHeaders))
-            .execute().use { it.header("location") }
-            ?: return null
-
-        if (redirectUrl.toHttpUrlOrNull() == null) {
-            return null
-        }
-
-        return redirectUrl
-    }
-
-    private val streamWishExtractor by lazy {
-        val swHeaders = headersBuilder()
-            .set("Referer", "$baseUrl/")
-            .build()
-
-        StreamWishExtractor(client, swHeaders)
-    }
-    private val streamTapeExtractor by lazy { StreamTapeExtractor(client) }
-    private val doodExtractor by lazy { DoodExtractor(client) }
-    private val mixDropExtractor by lazy { MixDropExtractor(client) }
-    private val maxStreamExtractor by lazy { MaxStreamExtractor(client, headers) }
-    private val emTurboExtractor by lazy { EmTurboExtractor(client, headers) }
-
-    private fun getVideos(hosterUrl: String): List<Video> {
+    private suspend fun getVideos(hosterUrl: String): List<Video> {
         return when {
+            // TODO: use ExtractableVideo class to detect
             listOf("javplaya", "javclan").any { it in hosterUrl } -> {
-                streamWishExtractor.videosFromUrl(hosterUrl)
+                StreamWishExtractor.extractVideos(hosterUrl)
             }
 
-            hosterUrl.contains("streamtape") -> {
-                streamTapeExtractor.videoFromUrl(hosterUrl).let(::listOfNotNull)
+            StreamTapeExtractor.supports(hosterUrl) -> {
+                StreamTapeExtractor.extractVideos(hosterUrl)
             }
 
-            listOf("dood", "ds2play").any { it in hosterUrl } -> {
-                doodExtractor.videosFromUrl(hosterUrl)
+            DoodExtractor.supports(hosterUrl) -> {
+                DoodExtractor.extractVideos(hosterUrl)
             }
 
-            listOf("mixdrop", "mixdroop").any { it in hosterUrl } -> {
-                mixDropExtractor.videoFromUrl(hosterUrl)
+            MixDropExtractor.supports(hosterUrl) -> {
+                MixDropExtractor.extractVideos(hosterUrl)
             }
 
-            hosterUrl.contains("maxstream") -> {
-                maxStreamExtractor.videoFromUrl(hosterUrl)
+            MaxStreamExtractor.supports(hosterUrl) -> {
+                MaxStreamExtractor.extractVideos(hosterUrl)
             }
 
-            hosterUrl.contains("emturbovid") -> {
-                emTurboExtractor.getVideos(hosterUrl)
+            EmTurboVidExtractor.supports(hosterUrl) -> {
+                EmTurboVidExtractor.extractVideos(hosterUrl)
             }
 
             else -> emptyList()
