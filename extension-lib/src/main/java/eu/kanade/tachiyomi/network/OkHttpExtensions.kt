@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.network
 
-import okhttp3.CacheControl
 import okhttp3.Call
 import okhttp3.FormBody
 import okhttp3.Headers
@@ -8,7 +7,6 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.Response
-import kotlin.time.Duration.Companion.minutes
 
 suspend fun Call.await(): Response = throw Exception("Stub!")
 
@@ -29,24 +27,21 @@ class HttpException(val code: Int) : IllegalStateException("HTTP error $code")
 suspend inline fun OkHttpClient.get(
     url: String,
     headers: Headers,
-    cache: CacheControl = CacheControl.Builder().maxAge(10.minutes).build()
 ): Response {
-    return newCall(GET(url, headers, cache)).awaitSuccess()
+    return newCall(GET(url, headers)).awaitSuccess()
 }
 
 suspend inline fun OkHttpClient.get(
     url: HttpUrl,
     headers: Headers,
-    cache: CacheControl = CacheControl.Builder().maxAge(10.minutes).build()
 ): Response {
-    return newCall(GET(url, headers, cache)).awaitSuccess()
+    return newCall(GET(url, headers)).awaitSuccess()
 }
 
 suspend inline fun OkHttpClient.post(
     url: String,
     headers: Headers,
     body: RequestBody = FormBody.Builder().build(),
-    cache: CacheControl = CacheControl.Builder().maxAge(10.minutes).build()
 ): Response {
-    return newCall(POST(url, headers, body, cache)).awaitSuccess()
+    return newCall(POST(url, headers, body)).awaitSuccess()
 }

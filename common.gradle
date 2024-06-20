@@ -8,7 +8,7 @@ assert !ext.has("libVersion")
 
 android {
     compileSdkVersion AndroidConfig.compileSdk
-    namespace AndroidConfig.namespace
+    namespace "io.github.awkwardpeak7.extension"
 
     sourceSets {
         main {
@@ -88,9 +88,9 @@ android {
 }
 
 dependencies {
-    compileOnly(project(":extension-lib"))
     implementation(project(":core"))
     compileOnly(libs.bundles.common)
+    compileOnly(project(":extension-lib"))
 }
 
 configurations.configureEach {

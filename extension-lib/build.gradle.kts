@@ -1,28 +1,28 @@
 plugins {
     id("com.android.library")
+    kotlin("android")
 }
 
-val ver = "14"
-version = ver
-
 android {
-    compileSdk = 34
-    namespace = "eu.kanade.tachiyomi.animeextensions"
+    compileSdk = AndroidConfig.compileSdk
 
     defaultConfig {
-        minSdk = 21
+        minSdk = AndroidConfig.minSdk
     }
 
-    buildTypes {
-        named("release") {
-            isMinifyEnabled = false
-        }
+    namespace = "eu.kanade.tachiyomi.animeextensions"
+
+    buildFeatures {
+        androidResources = false
     }
 
-    val javaVersion = JavaVersion.VERSION_1_8
     compileOptions {
-        sourceCompatibility = javaVersion
-        targetCompatibility = javaVersion
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
 

@@ -19,8 +19,7 @@ fun File.eachDir(block: (File) -> Unit) {
         if (
             file.isDirectory &&
             file.name != ".gradle" &&
-            file.name != "build" &&
-            file.listFiles()?.any { it.name == "build.gradle.kts" } == true
+            file.name != "build"
         ) {
             block(file)
         }

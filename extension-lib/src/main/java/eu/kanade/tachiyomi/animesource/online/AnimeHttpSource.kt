@@ -5,14 +5,12 @@ import eu.kanade.tachiyomi.animesource.AnimeCatalogueSource
 import eu.kanade.tachiyomi.animesource.model.*
 import okhttp3.Headers
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 
 /**
  * A simple implementation for sources from a website.
  * Usually requires the usage of json serialization or similar techniques.
  */
-@Suppress("unused", "unused_parameter")
+@Suppress("unused", "unused_parameter", "UnusedReceiverParameter")
 abstract class AnimeHttpSource : AnimeCatalogueSource {
 
     /**
@@ -112,137 +110,6 @@ abstract class AnimeHttpSource : AnimeCatalogueSource {
     }
 
     /**
-     * Returns the request for the popular anime given the page.
-     *
-     * @param page the page number to retrieve.
-     */
-    protected abstract fun popularAnimeRequest(page: Int): Request
-
-    /**
-     * Parses the response from the site and returns a [AnimesPage] object.
-     *
-     * @param response the response from the site.
-     */
-    protected abstract fun popularAnimeParse(response: Response): AnimesPage
-
-    /**
-     * Returns the request for the search anime given the page and filters.
-     *
-     * @param page the page number to retrieve.
-     * @param query the search query.
-     * @param filters the list of filters to apply.
-     */
-    protected abstract fun searchAnimeRequest(page: Int, query: String, filters: AnimeFilterList): Request
-
-    /**
-     * Parses the response from the site and returns a [AnimesPage] object.
-     *
-     * @param response the response from the site.
-     */
-    protected abstract fun searchAnimeParse(response: Response): AnimesPage
-
-    /**
-     * Returns the request for latest anime given the page.
-     *
-     * @param page the page number to retrieve.
-     */
-    protected abstract fun latestUpdatesRequest(page: Int): Request
-
-    /**
-     * Parses the response from the site and returns a [AnimesPage] object.
-     *
-     * @param response the response from the site.
-     */
-    protected abstract fun latestUpdatesParse(response: Response): AnimesPage
-
-    /**
-     * Get the updated details for a anime.
-     * Normally it's not needed to override this method.
-     *
-     * @param anime the anime to be updated.
-     * @return the updated anime.
-     */
-    override suspend fun getAnimeDetails(anime: SAnime): SAnime {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Returns the request for the details of a anime. Override only if it's needed to change the
-     * url, send different headers or request method like POST.
-     *
-     * @param anime the anime to be updated.
-     */
-    open fun animeDetailsRequest(anime: SAnime): Request {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Parses the response from the site and returns the details of a anime.
-     *
-     * @param response the response from the site.
-     */
-    protected abstract fun animeDetailsParse(response: Response): SAnime
-
-    /**
-     * Get all the available episodes for an anime.
-     * Normally it's not needed to override this method.
-     *
-     * @param anime the anime to update.
-     * @return the episodes for the anime.
-     * @throws LicensedEntryItemsException if a anime is licensed and therefore no episodes are available.
-     */
-    override suspend fun getEpisodeList(anime: SAnime): List<SEpisode> {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Get the list of videos a episode has. Videos should be returned
-     * in the expected order; the index is ignored.
-     *
-     * @param episode the episode.
-     * @return the videos for the episode.
-     */
-    override suspend fun getVideoList(episode: SEpisode): List<Video> {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Returns the request for updating the episode list. Override only if it's needed to override
-     * the url, send different headers or request method like POST.
-     *
-     * @param anime the anime to look for episodes.
-     */
-    protected open fun episodeListRequest(anime: SAnime): Request {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Parses the response from the site and returns a list of episodes.
-     *
-     * @param response the response from the site.
-     */
-    protected abstract fun episodeListParse(response: Response): List<SEpisode>
-
-    /**
-     * Returns the request for getting the video list. Override only if it's needed to override
-     * the url, send different headers or request method like POST.
-     *
-     * @param episode the episode to look for videos.
-     */
-    protected open fun videoListRequest(episode: SEpisode): Request {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Parses the response from the site and returns a list of videos.
-     *
-     * @param response the response from the site.
-     */
-    protected open fun videoListParse(response: Response): List<Video> {
-        throw Exception("Stub!")
-    }
-
-    /**
      * Sorts the video list.
      * Override this according to the user's preference.
      *
@@ -271,20 +138,6 @@ abstract class AnimeHttpSource : AnimeCatalogueSource {
      * ```
      */
     protected open fun List<Video>.sort(): List<Video> {
-        throw Exception("Stub!")
-    }
-
-    /**
-     * Returns the request for getting the url to the source video. Override only if it's needed to
-     * override the url, send different headers or request method like POST.
-     *
-     * @param video the video whose its links have to be fetched.
-     */
-    protected open fun videoUrlRequest(video: Video): Request {
-        throw Exception("Stub!")
-    }
-
-    protected open fun videoUrlParse(response: Response): String {
         throw Exception("Stub!")
     }
 
@@ -326,9 +179,7 @@ abstract class AnimeHttpSource : AnimeCatalogueSource {
      * @param anime the anime
      * @return url of the anime
      */
-    open fun getAnimeUrl(anime: SAnime): String {
-        throw Exception("Stub!")
-    }
+    abstract fun getAnimeUrl(anime: SAnime): String
 
     /**
      * Returns the url of the provided episode.
@@ -337,9 +188,7 @@ abstract class AnimeHttpSource : AnimeCatalogueSource {
      * @param episode the episode
      * @return url of the episode
      */
-    open fun getEpisodeUrl(episode: SEpisode): String {
-        throw Exception("Stub!")
-    }
+    abstract fun getEpisodeUrl(episode: SEpisode): String
 
     /**
      * Called before inserting a new episode into database. Use it if you need to override episode
