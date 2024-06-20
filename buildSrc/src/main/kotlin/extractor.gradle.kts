@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
-    compileOnly(project(":extension-lib"))
+    compileOnly(project(":project:extension-lib"))
     compileOnly(versionCatalogs.named("libs").findBundle("common").get())
+    implementation(project(":project:common-lib"))
 }

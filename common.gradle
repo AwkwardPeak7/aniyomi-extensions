@@ -88,9 +88,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":core"))
+    implementation(project(":project:core"))
     compileOnly(libs.bundles.common)
-    compileOnly(project(":extension-lib"))
+    compileOnly(project(":project:extension-lib"))
+    implementation(project(":project:common-lib"))
 }
 
 configurations.configureEach {

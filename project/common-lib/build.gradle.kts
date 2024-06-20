@@ -1,7 +1,6 @@
 plugins {
     id("com.android.library")
     kotlin("android")
-    id("kotlinx-serialization")
 }
 
 android {
@@ -11,16 +10,7 @@ android {
         minSdk = AndroidConfig.minSdk
     }
 
-    namespace = "io.github.awkwardpeak7.lib.${project.name}"
-
-    sourceSets {
-        named("main") {
-            manifest.srcFile("AndroidManifest.xml")
-            java.setSrcDirs(listOf("src"))
-            res.setSrcDirs(listOf("res"))
-            assets.setSrcDirs(listOf("assets"))
-        }
-    }
+    namespace = "io.github.awkwardpeak7.common"
 
     buildFeatures {
         androidResources = false
@@ -33,11 +23,10 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
     }
 }
 
 dependencies {
+    compileOnly(libs.bundles.common)
     compileOnly(project(":project:extension-lib"))
-    compileOnly(versionCatalogs.named("libs").findBundle("common").get())
 }

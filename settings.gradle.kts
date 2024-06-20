@@ -1,7 +1,8 @@
 apply(from = "repositories.gradle.kts")
 
-include(":core")
-include(":extension-lib")
+include(":project:core")
+include(":project:extension-lib")
+include(":project:common-lib")
 
 File(rootDir, "lib").eachDir { include("lib:${it.name}") }
 
