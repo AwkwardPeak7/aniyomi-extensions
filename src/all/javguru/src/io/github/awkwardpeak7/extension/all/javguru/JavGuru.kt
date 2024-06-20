@@ -16,9 +16,9 @@ import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.util.asJsoup
 import eu.kanade.tachiyomi.util.parallelCatchingFlatMapBlocking
-import io.github.awkwardpeak7.extension.all.javguru.extractors.EmTurboExtractor
-import io.github.awkwardpeak7.extension.all.javguru.extractors.MaxStreamExtractor
 import io.github.awkwardpeak7.extractor.dood.DoodExtractor
+import io.github.awkwardpeak7.extractor.emturbovid.EmTurboExtractor
+import io.github.awkwardpeak7.extractor.maxstream.MaxStreamExtractor
 import io.github.awkwardpeak7.extractor.mixdrop.MixDropExtractor
 import io.github.awkwardpeak7.extractor.streamtape.StreamTapeExtractor
 import io.github.awkwardpeak7.extractor.streamwish.StreamWishExtractor

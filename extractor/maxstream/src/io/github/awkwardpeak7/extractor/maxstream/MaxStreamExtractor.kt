@@ -1,4 +1,4 @@
-package io.github.awkwardpeak7.extension.all.javguru.extractors
+package io.github.awkwardpeak7.extractor.maxstream
 
 import dev.datlag.jsunpacker.JsUnpacker
 import eu.kanade.tachiyomi.animesource.model.Video

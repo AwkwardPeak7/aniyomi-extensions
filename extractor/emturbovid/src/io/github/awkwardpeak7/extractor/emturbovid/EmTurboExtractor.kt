@@ -1,4 +1,4 @@
-package io.github.awkwardpeak7.extension.all.javguru.extractors
+package io.github.awkwardpeak7.extractor.emturbovid
 
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.network.GET
