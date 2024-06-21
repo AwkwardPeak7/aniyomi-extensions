@@ -20,7 +20,13 @@ object StreamWishExtractor : Extractor() {
     }
 
     override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
-        val document = client.get(data.url, headers).asJsoup()
+        val swHeaders = data.referer?.let {
+            headersBuilder()
+                .set("Referer", it)
+                .build()
+        } ?: headers
+
+        val document = client.get(data.url, swHeaders).asJsoup()
         val scriptBody = document.selectFirst("script:containsData(m3u8)")?.data()
             ?.let { script ->
                 if (script.contains("eval(function(p,a,c")) {

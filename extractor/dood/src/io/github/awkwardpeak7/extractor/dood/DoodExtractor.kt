@@ -12,8 +12,8 @@ object DoodExtractor : Extractor() {
         val host = data.url.toHttpUrl().host
 
         return host.contains(doodhostRegex) ||
-            doodhosts.any { host.contains(it) } ||
-            data.extra?.contains("DD") ?: true
+            doodhosts.any { host.contains(it) }
+        // data.extra?.contains("DD") ?: true
     }
 
     private val doodhostRegex = Regex("do+d")

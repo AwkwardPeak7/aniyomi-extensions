@@ -1,6 +1,6 @@
 package io.github.awkwardpeak7.extractor.maxstream
 
-import dev.datlag.jsunpacker.JsUnpacker
+import app.cash.quickjs.QuickJs
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.util.asJsoup
 import io.github.awkwardpeak7.common.extractor.ExtractableVideo
@@ -22,7 +22,12 @@ object MaxStreamExtractor : Extractor() {
 
         val script = document.selectFirst("script:containsData(function(p,a,c,k,e,d))")
             ?.data()
-            ?.let(JsUnpacker::unpackAndCombine)
+            ?.removePrefix("eval")
+            ?.let {
+                QuickJs.create().use { qjs ->
+                    qjs.evaluate(it).toString()
+                }
+            }
             ?: return emptyList()
 
         val videoUrl = script.substringAfter("file:\"").substringBefore("\"")

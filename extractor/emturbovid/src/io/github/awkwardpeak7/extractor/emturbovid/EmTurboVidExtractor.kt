@@ -16,12 +16,13 @@ object EmTurboVidExtractor : Extractor() {
     override suspend fun extractVideos(data: ExtractableVideo): List<Video> {
         val document = client.get(data.url, headers).asJsoup()
 
-        val script = document.selectFirst("script:containsData(urlplay)")
-            ?.data()
-            ?: return emptyList()
-
-        val urlPlay = urlPlay.find(script)?.groupValues?.get(1)
-            ?: return emptyList()
+        val urlPlay =
+            document.selectFirst("script:containsData(urlplay)")
+                ?.data()
+                ?.let { urlPlay.find(it)?.groupValues?.get(1) }
+                ?: document.selectFirst("#video_player")
+                    ?.dataset()?.get("hash")
+                ?: return emptyList()
 
         if (urlPlay.toHttpUrlOrNull() == null) {
             return emptyList()

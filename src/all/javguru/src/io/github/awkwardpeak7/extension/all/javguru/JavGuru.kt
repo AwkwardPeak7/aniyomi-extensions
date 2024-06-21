@@ -16,6 +16,7 @@ import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.util.asJsoup
 import eu.kanade.tachiyomi.util.parallelCatchingFlatMap
+import io.github.awkwardpeak7.common.extractor.ExtractableVideo
 import io.github.awkwardpeak7.extractor.dood.DoodExtractor
 import io.github.awkwardpeak7.extractor.emturbovid.EmTurboVidExtractor
 import io.github.awkwardpeak7.extractor.maxstream.MaxStreamExtractor
@@ -274,14 +275,15 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
 
                 redirectUrl
             }.parallelCatchingFlatMap(::getVideos)
-        }
+        }.sort()
     }
 
     private suspend fun getVideos(hosterUrl: String): List<Video> {
         return when {
             // TODO: use ExtractableVideo class to detect
             listOf("javplaya", "javclan").any { it in hosterUrl } -> {
-                StreamWishExtractor.extractVideos(hosterUrl)
+                val data = ExtractableVideo(url = hosterUrl, referer = "$baseUrl/")
+                StreamWishExtractor.extractVideos(data)
             }
 
             StreamTapeExtractor.supports(hosterUrl) -> {

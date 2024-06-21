@@ -39,4 +39,5 @@ data class ExtractableVideo(
     val url: String,
     val extra: String? = null,
     val quality: String? = null,
+    val referer: String? = null,
 )
