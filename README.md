@@ -1,6 +1,6 @@
 # AwkwardPeak7's Aniyomi Extensions
 
-repo link: https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json
+repo link: https://raw.githubusercontent.com/AwkwardPeak7/aniyomi-extensions/repo/index.min.json
 
 just copy paste this in More > Settings > Browse > Anime Extension repos > + Add
 
