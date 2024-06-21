@@ -22,6 +22,9 @@ object JavCoverInterceptor : Interceptor {
         }
 
         val img = BitmapFactory.decodeStream(response.body.byteStream())
+
+        // 2.11 -> magic number from PythonCoverCrop
+        // https://pastebin.com/rZGHz3QW
         val width = ceil(img.width / 2.11).toInt()
 
         val newImg = Bitmap.createBitmap(img, img.width - width, 0, width, img.height)
