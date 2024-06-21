@@ -23,8 +23,7 @@ import io.github.awkwardpeak7.extractor.maxstream.MaxStreamExtractor
 import io.github.awkwardpeak7.extractor.mixdrop.MixDropExtractor
 import io.github.awkwardpeak7.extractor.streamtape.StreamTapeExtractor
 import io.github.awkwardpeak7.extractor.streamwish.StreamWishExtractor
-import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher
-import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher.fetchHDCovers
+import io.github.awkwardpeak7.lib.javcoverinterceptor.JavCoverInterceptor
 import io.github.awkwardpeak7.network.get
 import io.github.awkwardpeak7.network.getNotChecking
 import okhttp3.Call
@@ -47,13 +46,17 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
 
     override val supportsLatest = true
 
-    private val noRedirectClient = client.newBuilder()
+    private val noRedirectClient = network.client.newBuilder()
         .followRedirects(false)
         .build()
 
     private val preference by lazy {
         Injekt.get<Application>().getSharedPreferences("source_$id", 0x0000)
     }
+
+    override val client = network.client.newBuilder()
+        .addNetworkInterceptor(JavCoverInterceptor)
+        .build()
 
     private lateinit var popularElements: Elements
 
@@ -79,7 +82,9 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
                         ?: setUrlWithoutDomain(a.attr("href"))
 
                     title = a.text()
-                    thumbnail_url = a.select("img").attr("abs:src")
+                    thumbnail_url = JavCoverInterceptor.createThumbnail(
+                        a.select("img").attr("abs:src"),
+                    )
                 }
             }
         }
@@ -101,7 +106,9 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
                     getIDFromUrl(a)?.let { url = it }
                         ?: setUrlWithoutDomain(a.attr("href"))
                 }
-                thumbnail_url = element.select("img").attr("abs:src")
+                thumbnail_url = JavCoverInterceptor.createThumbnail(
+                    element.select("img").attr("abs:src"),
+                )
                 title = element.select("h2 > a").text()
             }
         }
@@ -191,9 +198,6 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
         return client.get(url, headers).use { response ->
             val document = response.asJsoup()
 
-            val javId = document.selectFirst(".infoleft li:contains(code)")?.ownText()
-            val siteCover = document.select(".large-screenshot img").attr("abs:src")
-
             SAnime.create().apply {
                 title = document.select(".titl").text()
                 genre = document.select(".infoleft a[rel*=tag]").joinToString { it.text() }
@@ -208,11 +212,10 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
                     document.selectFirst(".infoleft li:contains(actor)")?.text()?.let { append("$it\n") }
                     document.selectFirst(".infoleft li:contains(actress)")?.text()?.let { append("$it\n") }
                 }
-                thumbnail_url = if (preference.fetchHDCovers) {
-                    javId?.let { JavCoverFetcher.getCoverById(it) } ?: siteCover
-                } else {
-                    siteCover
-                }
+                thumbnail_url = document.selectFirst(".wp-content img[src*=m.media-amazon.com]")?.absUrl("src")
+                    ?: JavCoverInterceptor.createThumbnail(
+                        document.select(".large-screenshot img").attr("abs:src"),
+                    )
             }
         }
     }
@@ -354,8 +357,6 @@ class JavGuru : AnimeHttpSource(), ConfigurableAnimeSource {
             setDefaultValue(PREF_QUALITY_DEFAULT)
             summary = "%s"
         }.also(screen::addPreference)
-
-        JavCoverFetcher.addPreferenceToScreen(screen)
     }
 
     companion object {

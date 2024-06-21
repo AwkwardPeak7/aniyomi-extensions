@@ -14,5 +14,5 @@ dependencies {
     implementation(project(':extractor:mixdrop'))
     implementation(project(':extractor:emturbovid'))
     implementation(project(':extractor:maxstream'))
-    implementation(project(':lib:javcoverfetcher'))
+    implementation(project(':lib:javcoverinterceptor'))
 }

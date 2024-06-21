@@ -11,8 +11,7 @@ import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.util.asJsoup
-import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher
-import io.github.awkwardpeak7.lib.javcoverfetcher.JavCoverFetcher.fetchHDCovers
+import io.github.awkwardpeak7.lib.javcoverinterceptor.JavCoverInterceptor
 import io.github.awkwardpeak7.lib.playlistutils.PlaylistUtils
 import io.github.awkwardpeak7.lib.unpacker.Unpacker
 import io.github.awkwardpeak7.network.get
@@ -31,6 +30,10 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
     override val baseUrl = "https://missav.com"
 
     override val supportsLatest = true
+
+    override val client = network.client.newBuilder()
+        .addNetworkInterceptor(JavCoverInterceptor)
+        .build()
 
     override fun headersBuilder() = super.headersBuilder()
         .add("Referer", "$baseUrl/")
@@ -57,7 +60,9 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
                     setUrlWithoutDomain(it.attr("href"))
                     title = it.text()
                 }
-                thumbnail_url = element.selectFirst("img")?.attr("abs:data-src")
+                thumbnail_url = element.selectFirst("img")?.attr("abs:data-src")?.let { thumb ->
+                    JavCoverInterceptor.createThumbnail(thumb)
+                }
             }
         }
 
@@ -102,9 +107,6 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
         return client.get(getAnimeUrl(anime), headers).use { response ->
             val document = response.asJsoup()
 
-            val jpTitle = document.select("div.text-secondary span:contains(title) + span").text()
-            val siteCover = document.selectFirst("video.player")?.attr("abs:data-poster")
-
             SAnime.create().apply {
                 title = document.selectFirst("h1.text-base")!!.text()
                 genre = document.getInfo("/genres/")
@@ -124,11 +126,10 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
                         .eachText()
                         .forEach { append("\n$it") }
                 }
-                thumbnail_url = if (preferences.fetchHDCovers) {
-                    JavCoverFetcher.getCoverByTitle(jpTitle) ?: siteCover
-                } else {
-                    siteCover
-                }
+                thumbnail_url = document.selectFirst("video.player")
+                    ?.attr("abs:data-poster")?.let {
+                        JavCoverInterceptor.createThumbnail(it)
+                    }
             }
         }
     }
@@ -184,8 +185,6 @@ class MissAV : AnimeHttpSource(), ConfigurableAnimeSource {
             setDefaultValue(PREF_QUALITY_DEFAULT)
             summary = "%s"
         }.also(screen::addPreference)
-
-        JavCoverFetcher.addPreferenceToScreen(screen)
     }
 
     private inline fun <reified T> List<*>.firstInstanceOrNull(): T? =
