@@ -72,8 +72,16 @@ android {
         includeInApk = false
     }
 
+    dependenciesInfo {
+        includeInApk = false
+    }
+
     buildFeatures {
         buildConfig true
+    }
+
+    packaging {
+        resources.excludes.add("kotlin-tooling-metadata.json")
     }
 
     compileOptions {
