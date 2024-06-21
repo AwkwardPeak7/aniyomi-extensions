@@ -4,6 +4,8 @@ repo link: https://raw.githubusercontent.com/AwkwardPeak7/aniyomi-extensions/rep
 
 just copy paste this in More > Settings > Browse > Anime Extension repos > + Add
 
+Also, make sure to uninstall existing extensions before installing these ones
+
 ## License
 
     Copyright 2015 Javier Tomás
